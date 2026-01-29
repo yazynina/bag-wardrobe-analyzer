@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+iapi.anthropic.commport React, { useState } from 'react';
 import { Camera, Upload, Trash2, Sparkles, TrendingUp, AlertCircle, Check, Key } from 'lucide-react';
 
 const BagWardrobeAnalyzer = () => {
@@ -47,7 +47,7 @@ const BagWardrobeAnalyzer = () => {
           const promptText = 'You are a fashion consultant specializing in handbags and accessories. Analyze this bag collection and provide: 1. A brief overview of the collection (2-3 sentences) 2. Identified gaps (what is missing - be specific about bag types, colors, or occasions) 3. Bags that might be outdated or worn (if visible in images) 4. 3-4 specific recommendations for bags to add. Format your response as JSON with this structure: {"overview": "string", "gaps": ["gap1", "gap2", "gap3"], "outdated": ["concern1", "concern2"], "recommendations": [{"type": "string", "reason": "string", "priority": "high/medium/low"}]}. Be constructive, specific, and focus on building a versatile collection.';
 
           try {
-                  const response = await fetch("https://api.anthropic.com/v1/messages", {
+                  const response = await fetch("/api/analyze", {
                             method: "POST",
                             headers: {
                                         "Content-Type": "application/json",
