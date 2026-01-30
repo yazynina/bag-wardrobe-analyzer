@@ -1,4 +1,4 @@
-iapi.anthropic.commport React, { useState } from 'react'; 
+iapi.anthropic.commport React, { useState } from 'react';  
 import { Camera, Upload, Trash2, Sparkles, TrendingUp, AlertCircle, Check, Key } from 'lucide-react';
 
 const BagWardrobeAnalyzer = () => {
