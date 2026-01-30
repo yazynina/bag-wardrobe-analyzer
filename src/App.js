@@ -51,31 +51,11 @@ const BagWardrobeAnalyzer = () => {
                             method: "POST",
                             headers: {
                                         "Content-Type": "application/json",
-                                        "x-api-key": apiKey,
-                                        "anthropic-version": "2023-06-01"
+                                        
                             },
                             body: JSON.stringify({
-                                        model: "claude-sonnet-4-20250514",
-                                        max_tokens: 1000,
-                                        messages: [
-                                          {
-                                                          role: "user",
-                                                          content: [
-                                                            {
-                                                                                type: "text",
-                                                                                text: promptText
-                                                            },
-                                                                            ...bags.map(bag => ({
-                                                                                                type: "image",
-                                                                                                source: {
-                                                                                                                      type: "base64",
-                                                                                                                      media_type: "image/jpeg",
-                                                                                                                      data: bag.image.split(',')[1]
-                                                                                                  }
-                                                                            }))
-                                                                          ]
-                                          }
-                                                    ]
+                                        apiKey: apiKey,
+                                        bags: bags,
                             })
                   });
 
