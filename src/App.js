@@ -180,25 +180,72 @@ const BagWardrobeAnalyzer = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Your Collection ({bags.length} {bags.length === 1 ? 'bag' : 'bags'})
   </h2>
-             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
-{bags.map(bag => (
-                  <div key={bag.id} className="relative group">
-                    <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 shadow-md">
-                      <img
-                      src={bag.image}
-                      alt={bag.name}
-                      className="w-full h-full object-cover"
-                    />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                {bags.map(bag => (
+                    <div key={bag.id} className="relative group bg-gray-50 rounded-xl p-4 shadow-md">
+                        <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 shadow-md mb-4">
+                            <img
+                                src={bag.image}
+                                alt={bag.name}
+                                className="w-full h-full object-cover"
+                            />
                         </div>
-                  <button
-                    onClick={() => removeBag(bag.id)}
-                    className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
-                  >
-                                          <Trash2 className="w-4 h-4" />
-                      </button>
-                      </div>
-              ))}
-                </div>
+
+                        <button
+                            onClick={() => removeBag(bag.id)}
+                            className="absolute top-6 right-6 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+
+                        {/* NEW: Value tracking inputs */}
+                        <div className="space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Brand (e.g., Gucci)"
+                                value={bag.brand}
+                                onChange={(e) => updateBagDetails(bag.id, 'brand', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-rose-500"
+                            />
+
+                            <input
+                                type="text"
+                                placeholder="Model (e.g., Marmont)"
+                                value={bag.model}
+                                onChange={(e) => updateBagDetails(bag.id, 'model', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-rose-500"
+                            />
+
+                            <input
+                                type="number"
+                                placeholder="Purchase Price ($)"
+                                value={bag.purchasePrice}
+                                onChange={(e) => updateBagDetails(bag.id, 'purchasePrice', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-rose-500"
+                            />
+
+                            <input
+                                type="date"
+                                placeholder="Purchase Date"
+                                value={bag.purchaseDate}
+                                onChange={(e) => updateBagDetails(bag.id, 'purchaseDate', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-rose-500"
+                            />
+
+                            <select
+                                value={bag.condition}
+                                onChange={(e) => updateBagDetails(bag.id, 'condition', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-rose-500"
+                            >
+                                <option value="excellent">Excellent</option>
+                                <option value="good">Good</option>
+                                <option value="fair">Fair</option>
+                                <option value="poor">Poor</option>
+                            </select>
+                        </div>
+                    </div>
+                ))}
+            </div>
 
             <button
               onClick={analyzeCollection}
