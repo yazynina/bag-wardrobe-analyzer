@@ -22,6 +22,7 @@ const BagWardrobeAnalyzer = () => {
                                                                 model: '',
                                                                 purchasePrice: '',
                                                                 purchaseDate: '',
+                                                                estimatedValue: '',
                                                                 condition: 'good'
                             };
                             setBags(prev => [...prev, newBag]);
