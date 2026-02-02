@@ -292,6 +292,14 @@ const BagWardrobeAnalyzer = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-rose-500"
                             />
 
+                                                    <input
+                                                        type="number"
+                                                                                placeholder="Estimated Current Value ($)"
+                                                                                                        value={bag.estimatedValue}
+                                                                                                                                onChange={(e) => updateBagDetails(bag.id, 'estimatedValue', e.target.value)}
+                                                                                                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-rose-500"
+                                                                                                                                                                            />
+
                             <select
                                 value={bag.condition}
                                 onChange={(e) => updateBagDetails(bag.id, 'condition', e.target.value)}
