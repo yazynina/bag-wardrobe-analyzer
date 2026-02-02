@@ -518,6 +518,80 @@ const BagWardrobeAnalyzer = () => {
                 ))}
             </div>
 
+                                                    <button
+
+                                    onClick={() => estimateBagValue(bag.id)}
+
+                                    disabled={!bag.brand || !bag.model || bag.estimating}
+
+                                    className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white py-2 px-4 rounded-lg font-medium hover:from-purple-600 hover:to-indigo-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+
+                                >
+
+                                    {bag.estimating ? (
+
+                                                                                <>
+
+                                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+
+                                                                                    Estimating...
+
+                                        </>
+
+                                    ) : (
+
+                                                                                <>
+
+                                                                                    <Sparkles className="w-4 h-4" />
+
+                                                                                    AI Estimate Value
+
+                                        </>
+
+                                    )}
+
+                                        </button>
+
+
+
+{/* Show valuation info if available */}
+
+{bag.valuationReasoning && (
+
+                                        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm">
+
+                                            <p className="font-semibold text-indigo-900 mb-1">AI Valuation</p>
+
+                                         <p className="text-indigo-700 mb-2">{bag.valuationReasoning}</p>
+
+                                         <div className="flex gap-2 text-xs">
+
+                                                <span className={`px-2 py-1 rounded ${
+
+                                                    bag.marketTrend === 'appreciating' ? 'bg-green-100 text-green-700' :
+
+                                                    bag.marketTrend === 'depreciating' ? 'bg-red-100 text-red-700' :
+
+                                                    'bg-gray-100 text-gray-700'
+
+}`}>
+
+{bag.marketTrend}
+
+</span>
+
+                                            <span className="px-2 py-1 rounded bg-indigo-100 text-indigo-700">
+
+{bag.confidence} confidence
+
+    </span>
+
+    </div>
+
+    </div>
+
+                                )}
+
 {/* NEW: Collection Value Dashboard */}
 {bags.length > 0 && (
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl shadow-lg p-6 mb-6">
