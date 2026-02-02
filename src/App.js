@@ -30,6 +30,12 @@ const BagWardrobeAnalyzer = () => {
           setAnalysis(null);
     };
 
+    const updateBagDetails = (id, field, value) => {
+            setBags(prev => prev.map(bag =>
+                        bag.id === id ? { ...bag, [field]: value } : bag
+                    ));
+    };
+
     const analyzeCollection = async () => {
           if (bags.length === 0) {
                   alert('Please upload at least one bag image first!');
