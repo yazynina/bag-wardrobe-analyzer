@@ -61,7 +61,7 @@ const BagWardrobeAnalyzer = () => {
 
                                                                 marketTrend: '',
 
-                                                                confidence: ''
+                                                                confidence: '',
                             };
                             setBags(prev => [...prev, newBag]);
                   };
