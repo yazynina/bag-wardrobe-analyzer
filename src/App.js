@@ -70,6 +70,32 @@ const BagWardrobeAnalyzer = () => {
                     ));
     };
 
+        const calculateCollectionValue = () => {
+                    const totalPurchasePrice = bags.reduce((sum, bag) => {
+                                    return sum + (parseFloat(bag.purchasePrice) || 0);
+                    }, 0);
+
+                    const totalEstimatedValue = bags.reduce((sum, bag) => {
+                                    return sum + (parseFloat(bag.estimatedValue) || 0);
+                    }, 0);
+
+                    const bagsWithValues = bags.filter(bag => bag.purchasePrice && bag.estimatedValue);
+                    const appreciation = totalEstimatedValue - totalPurchasePrice;
+                    const appreciationPercent = totalPurchasePrice > 0
+                        ? ((appreciation / totalPurchasePrice) * 100).toFixed(1)
+                                    : 0;
+
+                    return {
+                                    totalPurchasePrice,
+                                    totalEstimatedValue,
+                                    appreciation,
+                                    appreciationPercent,
+                                    bagsWithValues: bagsWithValues.length,
+                                    totalBags: bags.length
+                    };
+        };
+    
+
     const analyzeCollection = async () => {
           if (bags.length === 0) {
                   alert('Please upload at least one bag image first!');
