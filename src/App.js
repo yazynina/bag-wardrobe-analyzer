@@ -8,6 +8,34 @@ const BagWardrobeAnalyzer = () => {
     const [apiKey, setApiKey] = useState('');
     const [showApiKeyInput, setShowApiKeyInput] = useState(true);
 
+    // Load bags from localStorage on component mount
+        React.useEffect(() => {
+                    const savedBags = localStorage.getItem('bagCollection');
+                    if (savedBags) {
+                                    setBags(JSON.parse(savedBags));
+                    }
+
+                    const savedApiKey = localStorage.getItem('anthropicApiKey');
+                    if (savedApiKey) {
+                                    setApiKey(savedApiKey);
+                                    setShowApiKeyInput(false);
+                    }
+        }, []);
+
+    // Save bags to localStorage whenever they change
+        React.useEffect(() => {
+                    if (bags.length > 0) {
+                                    localStorage.setItem('bagCollection', JSON.stringify(bags));
+                    }
+        }, [bags]);
+
+    // Save API key to localStorage
+        React.useEffect(() => {
+                    if (apiKey) {
+                                    localStorage.setItem('anthropicApiKey', apiKey);
+                    }
+        }, [apiKey]);
+
     const handleImageUpload = (e) => {
           const files = Array.from(e.target.files);
           files.forEach(file => {
