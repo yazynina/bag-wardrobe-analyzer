@@ -153,6 +153,176 @@ const BagWardrobeAnalyzer = () => {
           }
     };
 
+        const estimateBagValue = async (bagId) => {
+
+                    const bag = bags.find(b => b.id === bagId);
+
+
+
+                    if (!bag.brand || !bag.model) {
+
+                                    alert('Please enter brand and model first!');
+
+                                    return;
+
+                    }
+
+
+
+                    if (!apiKey || apiKey.trim() === '') {
+
+                                    alert('Please enter your Anthropic API key first!');
+
+                                    setShowApiKeyInput(true);
+
+                                    return;
+
+                    }
+
+
+
+                    // Add loading state to this specific bag
+
+                    setBags(prev => prev.map(b => 
+
+                                    b.id === bagId ? { ...b, estimating: true } : b
+
+                                ));
+
+
+
+                    const promptText = `You are a luxury handbag valuation expert. Estimate the current resale market value for this bag:
+
+
+
+                            Brand: ${bag.brand}
+
+                            Model: ${bag.model}
+
+                            Condition: ${bag.condition}
+
+                            Purchase Price: ${bag.purchasePrice ? '$' + bag.purchasePrice : 'Not provided'}
+
+                            Purchase Date: ${bag.purchaseDate || 'Not provided'}
+
+                            Provide your estimate as a JSON object with this structure:
+
+                            {
+
+                                "estimatedValue": <number>,
+
+                                    "reasoning": "<brief explanation of valuation>",
+
+                                        "marketTrend": "<appreciating/stable/depreciating>",
+
+                                            "confidence": "<high/medium/low>"
+
+                                            }
+
+                                            Base your estimate on typical resale values for this brand/model in the specified condition. Consider factors like brand prestige, model popularity, condition, and market trends.`;
+
+                    try {
+
+                                    const response = await fetch("/.netlify/functions/analyze", {
+
+                                                        method: "POST",
+
+                                                        headers: {
+
+                                                                                "Content-Type": "application/json",
+
+                                                        },
+
+                                                        body: JSON.stringify({
+
+                                                                                apiKey: apiKey,
+
+                                                                                bags: [{
+
+                                                                                                            id: bag.id,
+
+                                                                                                            image: bag.image,
+
+                                                                                                            brand: bag.brand,
+
+                                                                                                            model: bag.model,
+
+                                                                                                            condition: bag.condition
+                                                                                                                
+                                                                                    }],
+
+                                                                                customPrompt: promptText
+
+                                                        })
+
+                                    });
+
+                                    if (!response.ok) {
+
+                                                        const errorData = await response.json();
+
+                                                        throw new Error(errorData.error?.message || 'API Error: ' + response.status);
+
+                                    }
+
+                                    const data = await response.json();
+
+                                    const analysisText = data.content.find(c => c.type === 'text')?.text || '';
+
+
+
+                                    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+
+                                    if (jsonMatch) {
+
+                                                        const valuation = JSON.parse(jsonMatch[0]);
+
+
+
+                                                        // Update bag with estimated value
+
+                                                        setBags(prev => prev.map(b => 
+
+                                                                                b.id === bagId ? { 
+
+                                                                                                            ...b, 
+
+                                                                                                            estimatedValue: valuation.estimatedValue.toString(),
+
+                                                                                                            valuationReasoning: valuation.reasoning,
+
+                                                                                                            marketTrend: valuation.marketTrend,
+
+                                                                                                            confidence: valuation.confidence,
+
+                                                                                                            estimating: false
+                                                                                                                
+                                                                                    } : b
+
+                                                                            ));
+
+
+
+                                                        alert(`Estimated Value: $${valuation.estimatedValue}\n\nReasoning: ${valuation.reasoning}\n\nMarket Trend: ${valuation.marketTrend}\nConfidence: ${valuation.confidence}`);
+
+                                    }
+
+                    } catch (error) {
+
+                                    console.error('Valuation error:', error);
+
+                                    alert('Valuation failed: ' + error.message);
+
+                                    setBags(prev => prev.map(b => 
+
+                                                        b.id === bagId ? { ...b, estimating: false } : b
+
+                                                    ));
+
+                    }
+
+        };
+
     return (
           <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 p-8">
             <div className="max-w-6xl mx-auto">
@@ -200,6 +370,29 @@ const BagWardrobeAnalyzer = () => {
                          </div>
                          </div>
            )}
+
+      const estimateBagValue = async (bag) => {
+              try {
+                        const response = await fetch('/.netlify/functions/analyze', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                                  apiKey: apiKey,
+                                                  prompt: `Analyze this handbag and provide a valuation estimate. Brand: ${bag.brand}, Model: ${bag.model}, Purchase Price: $${bag.purchasePrice}, Purchase Date: ${bag.purchaseDate}, Condition: ${bag.condition}. Provide the response in JSON format with fields: estimatedValue (number), reasoning (string), marketTrend (string), and confidence (percentage as string).`
+                                    })
+                        });
+
+                        if (!response.ok) throw new Error(await response.text());
+
+                        const data = await response.json();
+                        const valuation = JSON.parse(data.content.find(c => c.type === 'text')?.text || '{}');
+
+                        alert(`Estimated Value: $${valuation.estimatedValue}\n\nReasoning: ${valuation.reasoning}\n\nMarket Trend: ${valuation.marketTrend}\nConfidence: ${valuation.confidence}`);
+              } catch (error) {
+                        console.error('Valuation error:', error);
+                        alert('Failed to estimate bag value. Please try again.');
+              }
+      };
 
   {!showApiKeyInput && (
               <div className="bg-green-50 rounded-lg p-4 mb-8 flex items-center justify-between">
