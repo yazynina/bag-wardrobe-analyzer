@@ -307,6 +307,59 @@ const BagWardrobeAnalyzer = () => {
                 ))}
             </div>
 
+{/* NEW: Collection Value Dashboard */}
+{bags.length > 0 && (
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <TrendingUp className="w-6 h-6 text-emerald-600" />
+                        Collection Value Tracker
+    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="bg-white rounded-xl p-4 shadow">
+                            <p className="text-sm text-gray-600 mb-1">Total Purchase Price</p>
+                            <p className="text-2xl font-bold text-gray-900">
+                                ${calculateCollectionValue().totalPurchasePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+ </p>
+     </div>
+
+                         <div className="bg-white rounded-xl p-4 shadow">
+                             <p className="text-sm text-gray-600 mb-1">Estimated Value</p>
+                             <p className="text-2xl font-bold text-gray-900">
+                                 ${calculateCollectionValue().totalEstimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+ </p>
+     </div>
+
+                         <div className="bg-white rounded-xl p-4 shadow">
+                             <p className="text-sm text-gray-600 mb-1">Appreciation</p>
+                             <p className={`text-2xl font-bold ${calculateCollectionValue().appreciation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+{calculateCollectionValue().appreciation >= 0 ? '+' : ''}
+                            ${calculateCollectionValue().appreciation.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+</p>
+                            <p className={`text-sm ${calculateCollectionValue().appreciation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ({calculateCollectionValue().appreciationPercent}%)
+                                    </p>
+                                    </div>
+
+                                                        <div className="bg-white rounded-xl p-4 shadow">
+                                                            <p className="text-sm text-gray-600 mb-1">Tracked Bags</p>
+                                                            <p className="text-2xl font-bold text-gray-900">
+                                {calculateCollectionValue().bagsWithValues} / {calculateCollectionValue().totalBags}
+                                    </p>
+                                                            <p className="text-sm text-gray-500">with values entered</p>
+                                    </div>
+                                    </div>
+
+{calculateCollectionValue().bagsWithValues < calculateCollectionValue().totalBags && (
+                        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                            <p className="text-sm text-amber-800">
+                                💡 Add purchase prices and estimated values to all bags for complete tracking
+    </p>
+    </div>
+                    )}
+</div>
+            )}
+
             <button
               onClick={analyzeCollection}
               disabled={isAnalyzing}
