@@ -51,7 +51,7 @@ const BagWardrobeAnalyzer = () => {
                                                                 purchasePrice: '',
                                                                 purchaseDate: '',
                                                                 estimatedValue: '',
-                                                                condition: 'good'
+                                                                condition: 'good',
 
                                                                 // NEW: AI valuation fields
 
