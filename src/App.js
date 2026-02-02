@@ -52,6 +52,16 @@ const BagWardrobeAnalyzer = () => {
                                                                 purchaseDate: '',
                                                                 estimatedValue: '',
                                                                 condition: 'good'
+
+                                                                // NEW: AI valuation fields
+
+                                                                estimating: false,
+
+                                                                valuationReasoning: '',
+
+                                                                marketTrend: '',
+
+                                                                confidence: ''
                             };
                             setBags(prev => [...prev, newBag]);
                   };
