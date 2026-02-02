@@ -17,7 +17,12 @@ const BagWardrobeAnalyzer = () => {
                                         id: Date.now() + Math.random(),
                                         image: event.target.result,
                                         name: file.name,
-                                        analyzed: false
+                                        analyzed: false,
+                                                                brand: '',
+                                                                model: '',
+                                                                purchasePrice: '',
+                                                                purchaseDate: '',
+                                                                condition: 'good'
                             };
                             setBags(prev => [...prev, newBag]);
                   };
