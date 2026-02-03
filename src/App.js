@@ -388,7 +388,7 @@ const BagWardrobeAnalyzer = () => {
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
                                                   apiKey: apiKey,
-                                                  prompt: `Analyze this handbag and provide a valuation estimate. Brand: ${bag.brand}, Model: ${bag.model}, Purchase Price: $${bag.purchasePrice}, Purchase Date: ${bag.purchaseDate}, Condition: ${bag.condition}. Provide the response in JSON format with fields: estimatedValue (number), reasoning (string), marketTrend (string), and confidence (percentage as string).`
+                                                  customPrompt: `Analyze this handbag and provide a valuation estimate. Brand: ${bag.brand}, Model: ${bag.model}, Purchase Price: $${bag.purchasePrice}, Purchase Date: ${bag.purchaseDate}, Condition: ${bag.condition}. Provide the response in JSON format with fields: estimatedValue (number), reasoning (string), marketTrend (string), and confidence (percentage as string).`
                                     })
                         });
 
