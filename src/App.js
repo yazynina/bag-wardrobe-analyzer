@@ -7,7 +7,7 @@ const BagWardrobeAnalyzer = () => {
                   return savedBags ? JSON.parse(savedBags) : [];
         });
         const [analysis, setAnalysis] = useState(null);
-        const [isAnalyzing, setIsAnalyzing] = useState(false);
+        const [isAnalyzing, setIsAnalyzing] = useStat(false);
         const [apiKey, setApiKey] = useState(() => localStorage.getItem('anthropicApiKey') || '');
         const [showApiKeyInput, setShowApiKeyInput] = useState(() => !localStorage.getItem('anthropicApiKey'));
 
@@ -90,7 +90,7 @@ const BagWardrobeAnalyzer = () => {
                   }
                   setIsAnalyzing(true);
                   try {
-                              const response = await fetch("/.netlify/functions/analyze", {
+                              const response = await fetch("/api/analyze", {
                                             method: "POST",
                                             headers: { "Content-Type": "application/json" },
                                             body: JSON.stringify({ apiKey, bags })
@@ -136,7 +136,7 @@ const BagWardrobeAnalyzer = () => {
                   Provide your estimate as a JSON object with this structure:
                   { "estimatedValue": <number>, "reasoning": "<brief explanation>", "marketTrend": "<appreciating/stable/depreciating>", "confidence": "<high/medium/low>" }`;
                   try {
-                              const response = await fetch("/.netlify/functions/analyze", {
+                              const response = await fetch("/api/analyze", {
                                             method: "POST",
                                             headers: { "Content-Type": "application/json" },
                                             body: JSON.stringify({
