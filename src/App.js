@@ -7,7 +7,7 @@ const BagWardrobeAnalyzer = () => {
                   return savedBags ? JSON.parse(savedBags) : [];
         });
         const [analysis, setAnalysis] = useState(null);
-        const [isAnalyzing, setIsAnalyzing] = useStat(false);
+        const [isAnalyzing, setIsAnalyzing] = useState(false);
         const [apiKey, setApiKey] = useState(() => localStorage.getItem('anthropicApiKey') || '');
         const [showApiKeyInput, setShowApiKeyInput] = useState(() => !localStorage.getItem('anthropicApiKey'));
 
