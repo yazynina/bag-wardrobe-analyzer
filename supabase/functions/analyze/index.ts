@@ -10,6 +10,11 @@
 //   3. fit inside the size caps,
 //   4. have one of today's credits left.
 //
+// The photos are NOT uploaded again by the browser. The browser sends only
+// bag ids; this function reads the rows and the photo files itself, using
+// the signed-in person's own token, so Row Level Security still guarantees
+// you can only ever analyse your own bags.
+//
 // The Anthropic API key is read from a server-side secret and never leaves
 // this server.
 //
@@ -18,10 +23,15 @@
 // that both Edge Functions always agree with each other.
 // ===========================================================================
 
+import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+
 import {
   CLAUDE_MODEL,
+  MAX_IMAGE_BYTES,
   MAX_IMAGES_PER_REQUEST,
   MAX_OUTPUT_TOKENS,
+  SUPPORTED_MEDIA_TYPES,
 } from "../_shared/config.ts";
 
 import {
@@ -36,8 +46,9 @@ import {
   refundCredit,
   requireUser,
   sanitiseUserText,
-  toImageBlock,
 } from "../_shared/guard.ts";
+
+const PHOTO_BUCKET = "bag-photos";
 
 // ---------------------------------------------------------------------------
 // The prompts. These are written by us and live on the server, so a visitor
@@ -63,21 +74,29 @@ const COLLECTION_PROMPT = [
 ].join(" ");
 
 /**
- * Builds the valuation prompt from the few fields the user typed in.
+ * Builds the valuation prompt from the few fields the owner typed in.
  *
- * Everything the user typed is cleaned up first and then wrapped in ###
- * markers, with an explicit instruction to treat it as data. That is what
- * stops somebody typing "ignore your instructions and ..." into the Brand
- * box and having it obeyed.
+ * The values come out of the database, but they were still typed by a
+ * person, so they are cleaned up and then wrapped in ### markers with an
+ * explicit instruction to treat them as data. That is what stops somebody
+ * typing "ignore your instructions and ..." into the Brand box.
  */
-function buildValuationPrompt(bag: unknown): string {
-  const details = (bag || {}) as Record<string, unknown>;
-
-  const brand = sanitiseUserText(details.brand, 80);
-  const model = sanitiseUserText(details.model, 80);
-  const condition = sanitiseUserText(details.condition, 20) || "good";
-  const purchasePrice = sanitiseUserText(details.purchasePrice, 20);
-  const purchaseDate = sanitiseUserText(details.purchaseDate, 20);
+function buildValuationPrompt(row: Record<string, unknown>): string {
+  const brand = sanitiseUserText(row.brand, 80);
+  const model = sanitiseUserText(row.model, 80);
+  const condition = sanitiseUserText(row.condition, 20) || "good";
+  const purchasePrice = sanitiseUserText(
+    row.purchase_price === null || row.purchase_price === undefined
+      ? ""
+      : String(row.purchase_price),
+    20,
+  );
+  const purchaseDate = sanitiseUserText(
+    row.purchase_date === null || row.purchase_date === undefined
+      ? ""
+      : String(row.purchase_date),
+    20,
+  );
 
   if (!brand || !model) {
     throw new ApiError(
@@ -107,6 +126,67 @@ function buildValuationPrompt(bag: unknown): string {
     '"appreciating|stable|depreciating", "confidence": "high|medium|low"}',
   ].join("
 ");
+}
+
+// ---------------------------------------------------------------------------
+// Reading the photos out of the private bucket
+// ---------------------------------------------------------------------------
+
+/** Works out the real image type, so PNG is never mislabelled as JPEG. */
+function mediaTypeFor(path: string, blobType: string): string | null {
+  const declared = (blobType || "").toLowerCase();
+  if (SUPPORTED_MEDIA_TYPES.includes(declared)) return declared;
+
+  const lower = path.toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+
+  return null;
+}
+
+async function imageBlocksFor(
+  client: SupabaseClient,
+  rows: Array<Record<string, unknown>>,
+) {
+  const blocks = [];
+
+  for (const row of rows) {
+    const path = typeof row.photo_path === "string" ? row.photo_path : "";
+    if (!path) continue;
+
+    const download = await client.storage.from(PHOTO_BUCKET).download(path);
+    if (download.error || !download.data) {
+      console.error("Could not read photo " + path);
+      continue;
+    }
+
+    const blob = download.data;
+    if (blob.size > MAX_IMAGE_BYTES) {
+      console.error("Skipping oversized photo " + path);
+      continue;
+    }
+
+    const mediaType = mediaTypeFor(path, blob.type);
+    if (!mediaType) {
+      console.error("Skipping unsupported photo " + path);
+      continue;
+    }
+
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    blocks.push({
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: mediaType,
+        data: encodeBase64(bytes),
+      },
+    });
+  }
+
+  return blocks;
 }
 
 // ---------------------------------------------------------------------------
@@ -157,36 +237,75 @@ Deno.serve(async (req: Request): Promise<Response> => {
   let creditSpent = false;
 
   try {
-    // Step 3: read and size-check the request.
     const body = await readJsonBody(req);
     const mode = body.mode === "valuation" ? "valuation" : "collection";
 
-    const rawImages = Array.isArray(body.images) ? body.images : [];
-    if (rawImages.length > MAX_IMAGES_PER_REQUEST) {
-      throw new ApiError(
-        "Please analyse at most " + MAX_IMAGES_PER_REQUEST +
-          " photos at a time.",
-        400,
-        "too_many_images",
-      );
+    // Step 3: fetch the caller's own rows. Row Level Security means this
+    // query physically cannot return somebody else's bags.
+    let query = client
+      .from("bags")
+      .select(
+        "id, brand, model, condition, purchase_price, purchase_date, photo_path",
+      )
+      .order("created_at", { ascending: true })
+      .limit(MAX_IMAGES_PER_REQUEST);
+
+    if (mode === "valuation") {
+      const bagId = typeof body.bagId === "string" ? body.bagId : "";
+      if (!bagId) {
+        throw new ApiError("Which bag?", 400, "missing_bag_id");
+      }
+      query = client
+        .from("bags")
+        .select(
+          "id, brand, model, condition, purchase_price, purchase_date, photo_path",
+        )
+        .eq("id", bagId)
+        .limit(1);
+    } else if (Array.isArray(body.bagIds) && body.bagIds.length > 0) {
+      const ids = body.bagIds
+        .filter((value: unknown) => typeof value === "string")
+        .slice(0, MAX_IMAGES_PER_REQUEST);
+      query = client
+        .from("bags")
+        .select(
+          "id, brand, model, condition, purchase_price, purchase_date, photo_path",
+        )
+        .in("id", ids)
+        .limit(MAX_IMAGES_PER_REQUEST);
     }
 
-    const imageBlocks = rawImages
-      .map(toImageBlock)
-      .filter((block) => block !== null);
+    const { data, error } = await query;
+    if (error) {
+      console.error("Could not read bags: " + error.message);
+      throw new ApiError("We could not read your collection.", 500, "db_error");
+    }
 
-    if (mode === "collection" && imageBlocks.length === 0) {
+    const rows = (data || []) as Array<Record<string, unknown>>;
+    if (rows.length === 0) {
       throw new ApiError(
-        "Please add at least one photo (JPEG, PNG, WEBP or GIF).",
-        400,
-        "no_images",
+        mode === "valuation"
+          ? "We could not find that bag."
+          : "Add at least one bag before running an analysis.",
+        404,
+        "no_bags",
       );
     }
 
     // Build the prompt before spending a credit, so a bad request is free.
     const promptText = mode === "valuation"
-      ? buildValuationPrompt(body.bag)
+      ? buildValuationPrompt(rows[0])
       : COLLECTION_PROMPT;
+
+    const imageBlocks = await imageBlocksFor(client, rows);
+
+    if (mode === "collection" && imageBlocks.length === 0) {
+      throw new ApiError(
+        "We could not read any of your photos. Please try uploading again.",
+        400,
+        "no_images",
+      );
+    }
 
     // Step 4: spend one of today's credits.
     const credit = await consumeCredit(client);
