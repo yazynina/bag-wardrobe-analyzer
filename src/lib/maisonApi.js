@@ -4,6 +4,9 @@
 // The browser never sees the Anthropic API key. It simply asks our own
 // Supabase Edge Functions, attaching the signed-in person's token so the
 // server can tell who is asking and check their daily allowance.
+//
+// Note that photos are never sent through here. We only send bag ids; the
+// Edge Function reads the photos out of the private bucket itself.
 // ===========================================================================
 
 import { supabase } from './supabaseClient';
@@ -68,24 +71,20 @@ async function invoke(functionName, payload) {
   return data;
 }
 
-/** Analyse the whole collection. images is an array of data URLs. */
-export function analyzeCollection(images) {
-  return invoke('analyze', { mode: 'collection', images });
+/**
+ * Analyse the collection. Pass an array of bag ids, or nothing at all to
+ * analyse everything in the account.
+ */
+export function analyzeCollection(bagIds) {
+  return invoke('analyze', {
+    mode: 'collection',
+    bagIds: Array.isArray(bagIds) ? bagIds : [],
+  });
 }
 
 /** Ask for a resale estimate for one bag. */
-export function estimateBagValue(bag, image) {
-  return invoke('analyze', {
-    mode: 'valuation',
-    bag: {
-      brand: bag.brand,
-      model: bag.model,
-      condition: bag.condition,
-      purchasePrice: bag.purchasePrice,
-      purchaseDate: bag.purchaseDate,
-    },
-    images: image ? [image] : [],
-  });
+export function estimateBagValue(bagId) {
+  return invoke('analyze', { mode: 'valuation', bagId });
 }
 
 /** Find shoppable suggestions for a recommendation. */
