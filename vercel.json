@@ -1,4 +1,8 @@
 {
-    "cleanUrls": true,
-    "trailingSlash": false
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "create-react-app",
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "cleanUrls": true,
+  "trailingSlash": false
 }
