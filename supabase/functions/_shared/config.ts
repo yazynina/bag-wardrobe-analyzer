@@ -16,12 +16,21 @@ export const DAILY_ANALYSIS_LIMIT = 15;
 
 /**
  * CLAUDE_MODEL
- * Which Claude model to send requests to.
- * If Anthropic ever retires this model you will see "model not found"
- * errors - come back here, paste in the current model name from
- * https://docs.anthropic.com/en/docs/about-claude/models and redeploy.
+ * Which Claude model the two Edge Functions send their requests to.
+ *
+ * Cheaper alternative: "claude-haiku-4-5-20251001" - a smaller, less
+ * expensive model. Switching to it lowers the cost of every request and
+ * is usually good enough for the product search, at the price of
+ * slightly less detailed write-ups.
+ *
+ * Model names change over time. Always check a name against the models
+ * page on https://docs.claude.com before you put it here. If you ever
+ * see a "model not found" error, that page is the first place to look:
+ * copy the current name in, then redeploy both functions.
  */
-export const CLAUDE_MODEL = "claude-sonnet-4-5";
+// Cheaper alternative: "claude-haiku-4-5-20251001".
+// Check names against the models page on https://docs.claude.com
+export const CLAUDE_MODEL = "claude-sonnet-5";
 
 // ---------------------------------------------------------------------------
 // Safety caps. These exist so that a single request can never run up a
