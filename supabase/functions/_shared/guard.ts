@@ -40,23 +40,123 @@ export class ApiError extends Error {
 
 /**
  * ALLOWED_ORIGINS is a comma separated list of web addresses, set as an Edge
- * Function secret, e.g.
- *   https://maison.vercel.app,http://localhost:3000
+ * Function secret. A browser on any other address gets no answer at all.
  *
  * If it is empty we refuse everybody on purpose. The old version of this app
  * answered requests from anywhere on the internet, which is exactly the
  * problem this rewrite exists to fix, so "not configured" must fail closed.
+ *
+ * Vercel gives every preview deploy its own address, for example
+ *
+ *   https://bag-wardrobe-analyzer-git-secure-multi-user-yazynina.vercel.app
+ *   https://bag-wardrobe-analyzer-k3f9d2a1x-yazynina.vercel.app
+ *
+ * so ONE entry in the list may contain a single "*" to cover them all:
+ *
+ *   https://bag-wardrobe-analyzer-*-yazynina.vercel.app
+ *
+ * A complete, working value therefore looks like this (all on one line):
+ *
+ *   https://bag-wardrobe-analyzer.vercel.app,
+ *   https://bag-wardrobe-analyzer-*-yazynina.vercel.app,
+ *   http://localhost:3000
+ *
+ * The rules below are what keep the wildcard safe:
+ *   - wildcards only work on https addresses, never http;
+ *   - the "*" may only stand for part of the host name - never the scheme,
+ *     never a port, never a path;
+ *   - there must be real text on BOTH sides of the "*", so a bare "*",
+ *     "https://*" and "https://*.vercel.app" are all refused;
+ *   - whatever the "*" matches may not contain a dot, so the pattern can
+ *     never stretch sideways into a domain that is not yours;
+ *   - only the first wildcard entry is honoured. Extra ones are ignored.
  */
-export function corsHeadersFor(req: Request): Cors | null {
+
+/** What the "*" is allowed to stand for: the characters of one host label. */
+const WILDCARD_LABEL = /^[a-z0-9-]+$/i;
+
+const HTTPS = "https://";
+
+/** Is this list entry a wildcard pattern we are willing to honour? */
+function isSafeWildcard(pattern: string): boolean {
+  if (!pattern.startsWith(HTTPS)) return false;
+
+  const host = pattern.slice(HTTPS.length);
+
+  // Host name only, and exactly one star.
+  if (host.includes("/")) return false;
+  if (host.split("*").length !== 2) return false;
+
+  const star = host.indexOf("*");
+  const prefix = host.slice(0, star);
+  const suffix = host.slice(star + 1);
+
+  // Real text on both sides. This is what rules out a bare "*",
+  // "https://*" and "https://*.vercel.app".
+  if (prefix.length < 3) return false;
+  if (suffix.length < 4) return false;
+  if (!suffix.includes(".")) return false;
+
+  return true;
+}
+
+/** Does a real Origin header match that pattern? */
+function wildcardMatches(pattern: string, origin: string): boolean {
+  if (!origin.startsWith(HTTPS)) return false;
+
+  const host = pattern.slice(HTTPS.length);
+  const star = host.indexOf("*");
+  const prefix = host.slice(0, star);
+  const suffix = host.slice(star + 1);
+
+  const originHost = origin.slice(HTTPS.length);
+  if (originHost.includes("/")) return false;
+  if (originHost.length <= prefix.length + suffix.length) return false;
+  if (!originHost.startsWith(prefix)) return false;
+  if (!originHost.endsWith(suffix)) return false;
+
+  const middle = originHost.slice(
+    prefix.length,
+    originHost.length - suffix.length,
+  );
+
+  return WILDCARD_LABEL.test(middle);
+}
+
+/** The single yes/no decision about an incoming Origin header. */
+export function isOriginAllowed(origin: string): boolean {
+  if (!origin) return false;
+
   const configured = (Deno.env.get("ALLOWED_ORIGINS") || "")
     .split(",")
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
 
+  if (configured.length === 0) return false;
+
+  // Plain entries have to match letter for letter.
+  if (configured.some((value) => !value.includes("*") && value === origin)) {
+    return true;
+  }
+
+  const wildcards = configured
+    .filter((value) => value.includes("*"))
+    .filter(isSafeWildcard);
+
+  if (wildcards.length === 0) return false;
+  if (wildcards.length > 1) {
+    console.warn(
+      "ALLOWED_ORIGINS has more than one wildcard; only the first is used.",
+    );
+  }
+
+  return wildcardMatches(wildcards[0], origin);
+}
+
+export function corsHeadersFor(req: Request): Cors | null {
   const origin = req.headers.get("origin") || "";
 
-  if (configured.length === 0) return null;
-  if (!configured.includes(origin)) return null;
+  if (!isOriginAllowed(origin)) return null;
 
   return {
     "Access-Control-Allow-Origin": origin,
