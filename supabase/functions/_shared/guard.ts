@@ -48,17 +48,17 @@ export class ApiError extends Error {
  *
  * Vercel gives every preview deploy its own address, for example
  *
- *   https://bag-wardrobe-analyzer-git-secure-multi-user-yazynina.vercel.app
- *   https://bag-wardrobe-analyzer-k3f9d2a1x-yazynina.vercel.app
+ *   https://bag-wardrobe-analyzer-git-secure-multi-user-alisas-projects-36bca485.vercel.app
+ *   https://bag-wardrobe-analyzer-k3f9d2a1x-alisas-projects-36bca485.vercel.app
  *
  * so ONE entry in the list may contain a single "*" to cover them all:
  *
- *   https://bag-wardrobe-analyzer-*-yazynina.vercel.app
+ *   https://bag-wardrobe-analyzer-*-alisas-projects-36bca485.vercel.app
  *
  * A complete, working value therefore looks like this (all on one line):
  *
  *   https://bag-wardrobe-analyzer.vercel.app,
- *   https://bag-wardrobe-analyzer-*-yazynina.vercel.app,
+ *   https://bag-wardrobe-analyzer-*-alisas-projects-36bca485.vercel.app,
  *   http://localhost:3000
  *
  * The rules below are what keep the wildcard safe:
